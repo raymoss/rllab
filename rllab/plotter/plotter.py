@@ -60,6 +60,8 @@ def init_worker():
 
 
 def init_plot(env, policy):
+    if queue is None:
+        init_worker()
     queue.put(['update', env, policy])
 
 
