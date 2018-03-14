@@ -131,7 +131,6 @@ class BatchPolopt(RLAlgorithm):
                     logger.dump_tabular(with_prefix=False)
                     if self.plot:
                         if initialize_plot == 0:
-                            plotter.init_worker(sess)
                             plotter.init_plot(self.env, self.policy)
                             initialize_plot = 1
                         plotter.update_plot(self.policy, self.max_path_length)

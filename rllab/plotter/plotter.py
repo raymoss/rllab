@@ -52,16 +52,16 @@ def _shutdown_worker():
 
 
 def init_worker():
-    global process, queue
-    queue = Queue()
-    process = Process(target=_worker_start)
-    process.start()
-    atexit.register(_shutdown_worker)
+    global process, queue    
+    if queue is None:
+        queue = Queue()
+        process = Process(target=_worker_start)
+        process.start()
+        atexit.register(_shutdown_worker)
 
 
 def init_plot(env, policy):
-    if queue is None:
-        init_worker()
+    init_worker()
     queue.put(['update', env, policy])
 
 

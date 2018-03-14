@@ -76,10 +76,6 @@ def run_experiment(argv):
         if args.seed is not None:
             parallel_sampler.set_seed(args.seed)
 
-    if args.plot:
-        from rllab.plotter import plotter
-        plotter.init_worker()
-
     if args.log_dir is None:
         log_dir = osp.join(default_log_dir, args.exp_name)
     else:
