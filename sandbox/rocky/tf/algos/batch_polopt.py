@@ -91,7 +91,6 @@ class BatchPolopt(RLAlgorithm):
 
     def shutdown_worker(self):
         self.sampler.shutdown_worker()
-        plotter.shutdown_worker()
 
     def obtain_samples(self, itr):
         return self.sampler.obtain_samples(itr)
@@ -103,45 +102,43 @@ class BatchPolopt(RLAlgorithm):
         created_session = True if (sess is None) else False
         if sess is None:
             sess = tf.Session()
-            sess.__enter__()
-        try:    
-            sess.run(tf.global_variables_initializer())
-            self.start_worker()
-            start_time = time.time()
-            initialize_plot = 0
-            for itr in range(self.start_itr, self.n_itr):
-                itr_start_time = time.time()
-                with logger.prefix('itr #%d | ' % itr):
-                    logger.log("Obtaining samples...")
-                    paths = self.obtain_samples(itr)
-                    logger.log("Processing samples...")
-                    samples_data = self.process_samples(itr, paths)
-                    logger.log("Logging diagnostics...")
-                    self.log_diagnostics(paths)
-                    logger.log("Optimizing policy...")
-                    self.optimize_policy(itr, samples_data)
-                    logger.log("Saving snapshot...")
-                    params = self.get_itr_snapshot(itr, samples_data)  # , **kwargs)
-                    if self.store_paths:
-                        params["paths"] = samples_data["paths"]
-                    logger.save_itr_params(itr, params)
-                    logger.log("Saved")
-                    logger.record_tabular('Time', time.time() - start_time)
-                    logger.record_tabular('ItrTime', time.time() - itr_start_time)
-                    logger.dump_tabular(with_prefix=False)
-                    if self.plot:
-                        if initialize_plot == 0:
-                            plotter.init_plot(self.env, self.policy)
-                            initialize_plot = 1
-                        plotter.update_plot(self.policy, self.max_path_length)
-                        if self.pause_for_plot:
-                            input("Plotting evaluation run: Press Enter to "
-                                  "continue...")
-        except KeyboardInterrupt:
-            print("Received keyboard interrupt. Exiting..")
+            sess.__enter__()  
+        sess.run(tf.global_variables_initializer())
+        self.start_worker()
+        start_time = time.time()
+        initialize_plot = 0
+        for itr in range(self.start_itr, self.n_itr):
+            itr_start_time = time.time()
+            with logger.prefix('itr #%d | ' % itr):
+                logger.log("Obtaining samples...")
+                paths = self.obtain_samples(itr)
+                logger.log("Processing samples...")
+                samples_data = self.process_samples(itr, paths)
+                logger.log("Logging diagnostics...")
+                self.log_diagnostics(paths)
+                logger.log("Optimizing policy...")
+                self.optimize_policy(itr, samples_data)
+                logger.log("Saving snapshot...")
+                params = self.get_itr_snapshot(itr, samples_data)  # , **kwargs)
+                if self.store_paths:
+                    params["paths"] = samples_data["paths"]
+                logger.save_itr_params(itr, params)
+                logger.log("Saved")
+                logger.record_tabular('Time', time.time() - start_time)
+                logger.record_tabular('ItrTime', time.time() - itr_start_time)
+                logger.dump_tabular(with_prefix=False)
+                if self.plot:
+                    if initialize_plot == 0:
+                        plotter.init_plot(self.env, self.policy)
+                        initialize_plot = 1
+                    plotter.update_plot(self.policy, self.max_path_length)
+                    if self.pause_for_plot:
+                        input("Plotting evaluation run: Press Enter to "
+                              "continue...")
         self.shutdown_worker()
         if created_session:
-            sess.close()
+            #sess.close()
+            pass
 
     def log_diagnostics(self, paths):
         self.env.log_diagnostics(paths)

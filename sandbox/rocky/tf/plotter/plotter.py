@@ -10,7 +10,7 @@ from rllab.sampler.utils import rollout
 
 
 
-__all__ = ['init_worker', 'init_plot', 'update_plot', 'shutdown_worker']
+__all__ = ['init_plot', 'update_plot']
 
 thread = None
 queue = None
@@ -45,13 +45,15 @@ class PlotterThread(Thread):
                     elif 'demo' in msgs:
                         param_values, max_length = msgs['demo']
                         policy.set_param_values(param_values)
-                        rollout(env, policy, max_path_length=max_length, animated=True, speedup=5)
+                        if not self.sess._closed:
+                            rollout(env, policy, max_path_length=max_length, animated=True, speedup=5)
                     else:
                         if max_length:
-                             rollout(env, policy, max_path_length=max_length, animated=True, speedup=5)
+                            if not self.sess._closed:
+                                rollout(env, policy, max_path_length=max_length, animated=True, speedup=5)
 
 
-def shutdown_worker():
+def _shutdown_worker():
     if thread:
         queue.put(['stop'])
         queue.task_done()
@@ -59,18 +61,24 @@ def shutdown_worker():
         thread.join()
 
 
-def init_worker(sess=None):
+def _init_worker(**kwargs):
     global queue, thread
     if queue is None:
         queue = Queue()
-        if sess is None:
+        if 'sess' in kwargs:
+            sess = kwargs.get('sess')
+            if sess is None:
+                sess = tf.get_default_session()
+        else:
             sess = tf.get_default_session()
         thread = PlotterThread(queue, sess)
+        thread.daemon = True
         thread.start()
+        atexit.register(_shutdown_worker)
 
 
-def init_plot(env, policy):
-    init_worker()
+def init_plot(env, policy, **kwargs):
+    _init_worker(**kwargs)
     queue.put(['update', env, policy])
     queue.task_done()
 
